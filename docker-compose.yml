@@ -1,0 +1,56 @@
+version: '3.8'
+
+name: esus-ab-pec
+
+services:
+  database:
+    container_name: database
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    image: esus_database:1.0
+    ports:
+      - "5433:5432"
+    networks:
+      - esus_network
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  webserver:
+    container_name: webserver
+    build:
+      context: ./webserver
+      dockerfile: Dockerfile
+    image: esus_webserver:1.0
+    ports:
+      - "8081:8080"
+      - "9990:9990"
+    networks:
+      - esus_network
+    environment:
+      ESUS_HOST: jdbc:postgresql://database:5432/esus
+      ESUS_USER: postgres
+      ESUS_PASS: esus
+    volumes:
+      - /sys/fs/cgroup/:/sys/fs/cgroup:rw
+      - webserver_data:/opt/e-SUS
+    privileged: true
+    depends_on:
+      - database
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+
+networks:
+  esus_network:
+
+volumes:
+  database_data:
+  webserver_data:
